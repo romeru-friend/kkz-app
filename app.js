@@ -29,40 +29,31 @@ const app = document.getElementById('app');
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 
-async function speak(text) {
+async function speak(text, voice = 'kk-KZ-AigulNeural') {
   if (!text) return;
   
   try {
-    // Динамически загружаем библиотеку Edge TTS
-    const { Communicate } = await import('https://esm.sh/@twn39/edgetts-js');
+    // ВСТАВЬТЕ СЮДА ВАШУ ССЫЛКУ НА CLOUDFLARE WORKER
+    const PROXY_URL = 'https://azure-tts-proxy.romerubeta.workers.dev'; 
     
-    // Используем казахский нейроголос Aigul (женский)
-    const communicate = new Communicate(text, { 
-      voice: 'kk-KZ-AigulNeural',
-      rate: '+0%',
-      pitch: '+0Hz'
+    const response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text, voice: voice })
     });
+
+    if (!response.ok) throw new Error('TTS request failed');
     
-    const chunks = [];
-    for await (const chunk of communicate.stream()) {
-      if (chunk.type === 'audio') {
-        chunks.push(chunk.data);
-      }
-    }
-    
-    if (chunks.length === 0) throw new Error('No audio');
-    
-    const blob = new Blob(chunks, { type: 'audio/mpeg' });
+    const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     
-    // Очищаем память после проигрывания
     audio.onended = () => URL.revokeObjectURL(url);
     audio.onerror = () => URL.revokeObjectURL(url);
     
     await audio.play();
-  } catch (e) {
-    console.warn('Edge TTS failed, fallback to system voice', e);
+  } catch (error) {
+    console.warn('Azure TTS failed, fallback to system voice', error);
     fallbackSpeak(text);
   }
 }
