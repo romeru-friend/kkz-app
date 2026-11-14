@@ -230,7 +230,7 @@ function topMenuHTML(active){
   const icon = menuOpen ? '▲' : '▼';
   return `
     <div class="topbar">
-      <button type="button" class="menu-btn" id="menuBtn">☰ Мәзір ${icon}</button>
+      <button type="button" class="menu-btn" id="menuBtn">☰ Меню ${icon}</button>
       <div class="pills">
         <div class="pill">🔥 ${store.streak}</div>
         <div class="pill blue">⚡ ${store.xp} XP</div>
@@ -591,7 +591,7 @@ function isUnlocked(id){
 function renderAuth() {
   setApp(`
     <header class="hero" style="padding:30px 0 10px">
-      <h1>Қазақ тілі</h1>
+      <h1>Учим казахский</h1>
       <p>Войдите, чтобы сохранять прогресс</p>
     </header>
     <div class="auth-container">
@@ -701,7 +701,7 @@ function renderHome(){
   const weakPart = weakCount > 0 ? `<span>⚠️ Слабых: <b>${weakCount}</b></span>` : '';
 
   setApp(`${topMenuHTML('home')}
-    <header class="hero"><h1>Қазақ тілі</h1><p>Учим казахский — шаг за шагом</p></header>
+    <header class="hero"><h1>Учим казахский</h1><p>Шаг за шагом</p></header>
     <div class="progress-card">
       <div class="progress-row">
         <span>📚 Пройдено уроков</span>
