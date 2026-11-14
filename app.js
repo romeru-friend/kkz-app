@@ -269,7 +269,7 @@ function bindMenu(){
 function renderWords(){
   session = null;
   setApp(`${topMenuHTML('words')}
-    <header class="hero" style="padding:14px 0 18px"><h1>Сөздік</h1><p>Изученные слова</p></header>
+    <header class="hero" style="padding:14px 0 18px"><h1>Словарь</h1><p>Изученные слова</p></header>
     <div class="word-controls">
       <input type="text" class="search-input" id="wordSearch" placeholder="🔍 Поиск..." value="${esc(wordsSearch)}">
       <div class="sort-tabs">
@@ -326,7 +326,7 @@ function renderReview(){
 
   if (groups.length === 0){
     setApp(`${topMenuHTML('review')}
-      <header class="hero" style="padding:14px 0 18px"><h1>Қайталау</h1><p>Повторение</p></header>
+      <header class="hero" style="padding:14px 0 18px"><h1>Повторение</h1><p>Повторение</p></header>
       <div class="empty-words"><div style="font-size:64px">🔁</div><p>Пока нечего повторять.</p></div>`);
     bindMenu();
     return;
@@ -341,7 +341,7 @@ function renderReview(){
     : '';
 
   setApp(`${topMenuHTML('review')}
-    <header class="hero" style="padding:14px 0 18px"><h1>Қайталау</h1><p>Повторение · ${total}</p></header>
+    <header class="hero" style="padding:14px 0 18px"><h1>Повторение</h1><p>Повторение · ${total}</p></header>
     <div class="review-intro">Выбери тему — 10 вопросов без новой теории.</div>
     ${weakBtn}
     <div class="review-random" id="randomBtn"><h4>🎲 Случайное повторение</h4><p>Из всех пройденных тем</p></div>
@@ -370,7 +370,7 @@ function renderReview(){
 function renderTranslate(){
   session = null;
   setApp(`${topMenuHTML('translate')}
-    <header class="hero" style="padding:14px 0 18px"><h1>Аудармашы</h1><p>Переводчик · ${getAllWords().length} слов в словаре</p></header>
+    <header class="hero" style="padding:14px 0 18px"><h1>Переводчик</h1><p>Переводчик · ${getAllWords().length} слов в словаре</p></header>
     <div class="translate-tabs">
       <button type="button" class="translate-tab ${translateFromLang==='kz'?'active':''}" data-from="kz">Қаз → Рус</button>
       <button type="button" class="translate-tab ${translateFromLang==='ru'?'active':''}" data-from="ru">Рус → Қаз</button>
@@ -522,7 +522,7 @@ function translateExternal(text, fromLang){
 function renderSettings(){
   session = null;
   setApp(`${topMenuHTML('settings')}
-    <header class="hero" style="padding:14px 0 18px"><h1>Баптаулар</h1><p>Настройки</p></header>
+    <header class="hero" style="padding:14px 0 18px"><h1>Настройки</h1><p>Настройки</p></header>
     <div class="settings-list">
       <div class="settings-item">
         <div class="si-text"><div class="si-title">🔀 Интерливинг</div><div class="si-desc">2 старых вопроса в конце каждого урока</div></div>
@@ -862,7 +862,7 @@ function renderReading(){
       <div class="hearts">${heartsDisplay(s.hearts)}</div>
       <div class="cnt">📖</div>
     </div>
-    <div class="lesson-body"><p class="q-prompt">Мәтін · Текст</p>
+    <div class="lesson-body"><p class="q-prompt">Текст</p>
       <h2 class="text-title">${esc(lesson.title)}</h2>
       <div class="text-hint">Нажми на предложение — перевод</div>
       <div class="text-card">${lesson.sentences.map(se => `<div class="text-sentence"><div class="ts-kz">${esc(se.kz)} <button type="button" class="inline-speak" data-text="${esc(se.kz)}">🔊</button></div><div class="ts-ru">${esc(se.ru)}</div></div>`).join('')}</div>
@@ -891,10 +891,10 @@ function renderLearn(){
   const alreadyDone = !!store.done[s.levelId + ':' + s.li];
   let body, prompt;
   if (card.kind === 'theory'){
-    prompt = 'Ереже · Правило';
+    prompt = 'Правило';
     body = `<div class="theory-card"><h3>${esc(card.title)}</h3><p>${esc(card.text)}</p>${(card.examples||[]).map(e => `<div class="theory-example"><div class="te-kz">${esc(e.kz)}</div><div class="te-ru">${esc(e.ru)}</div></div>`).join('')}</div>`;
   } else {
-    prompt = 'Жаңа сөз · Новое слово';
+    prompt = 'Новое слово';
     body = `<div class="learn-card">${card.emoji?`<div class="lc-emoji">${card.emoji}</div>`:''}<div class="lc-kz">${esc(card.kz)}</div><div class="lc-ru">${esc(card.ru)}</div><button type="button" class="speak" id="speakBtn">🔊</button></div>`;
   }
   setApp(`<div class="lesson-screen">
@@ -962,7 +962,7 @@ function renderBottom(){
     bottom.className = 'lesson-bottom fb ' + (f.ok?'ok':'bad');
     const hint = f.ok ? '' : grammarHint(f.exercise);
     setEl(bottom, `<div class="fb-row"><div class="fb-icon">${f.ok?'✅':'❌'}</div>
-      <div class="fb-text"><b>${f.ok?'Дұрыс!':'Қате!'}</b>
+      <div class="fb-text"><b>${f.ok?'Правильно!':'Неправильно!'}</b>
         <span>${f.ok?'Правильно':'Правильный ответ:'}</span>
         ${f.ok?'':`<em>${esc(f.answer)}</em>`}
         ${hint ? `<div class="fb-hint">💡 ${esc(hint)}</div>` : ''}
@@ -1044,7 +1044,7 @@ function finishLesson(){
 function renderResult(){
   const r = lastResult;
   const face = r.acc>=80?'🏆':r.acc>=50?'💪':'🌱';
-  const title = r.acc>=80?'Керемет!':r.acc>=50?'Жарайсың!':'Жалғастыр!';
+  const title = r.acc>=80?'Отлично!':r.acc>=50?'Молодец!':'Продолжай!';
   const sub = r.acc>=80?'Отличная работа!':r.acc>=50?'Хороший результат!':'Продолжай тренироваться!';
   const hasErrors = r.errors && r.errors.length > 0;
 
