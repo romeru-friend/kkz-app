@@ -42,7 +42,10 @@ async function speak(text, voice = 'kk-KZ-AigulNeural') {
       body: JSON.stringify({ text: text, voice: voice })
     });
 
-    if (!response.ok) throw new Error('TTS request failed');
+       if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(`Worker Error: ${errData.status || 'Unknown'} - ${errData.error_details || errData.error || 'No details'}`);
+    }
     
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
