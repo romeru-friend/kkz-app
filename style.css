@@ -491,3 +491,23 @@ body.dark .letter-slot { background: #1a2633; border-color: #2a3a4a; color: #e0e
 body.dark .letter-slot.empty { background: #141f2e; }
 body.dark .letter-btn { background: #1a2633; border-color: #2a3a4a; color: #e0e0e0; }
 body.dark .big-speak { background: #1a3548; color: #4db8f0; box-shadow: 0 4px 0 #0f2231; }
+  /* Стили для кнопки озвучки примера */
+  .inline-speak {
+    background: #eaf7ff;
+    color: #1cb0f6;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: 8px;
+    vertical-align: middle;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .inline-speak:active {
+    transform: scale(0.95);
+  }
+  body.dark .inline-speak {
+    background: #1a3548;
+    color: #4db8f0;
+  }
