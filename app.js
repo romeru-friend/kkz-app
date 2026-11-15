@@ -1149,7 +1149,20 @@ function bindChoice(ex){
   const sp = document.getElementById('speakBtn');
   if (sp && ex.speak) sp.onclick = () => speak(ex.speak);
 }
-function canCheck(){ const s=session; if(!s||s.feedback) return false; return s.selected != null; }
+function canCheck(){ 
+  const s = session; 
+  if (!s || s.feedback) return false; 
+  
+  const ex = s.exercises[s.idx];
+  
+  // Если это сборка слова, кнопка активна, когда заполнены все ячейки
+  if (ex.type === 'scramble') {
+    return s.scrambleSelected.length === ex.answer.length;
+  }
+  
+  // Для остальных типов упражнений (тест, аудирование) — как было
+  return s.selected != null; 
+}
 function renderBottom(){
   const s = session, bottom = document.getElementById('bottom');
   if (!bottom || !s) return;
