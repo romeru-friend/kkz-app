@@ -13,8 +13,9 @@ DATA.forEach(lv => lv.lessons.forEach((ls,i) => {
   FLAT.push(item);
 }));
 const LS_KEY = 'kkz_learn_v6';
-let store = { xp:0, done:{}, streak:0, last:null, interleaving:true, darkMode:false, weakWords:{} };
+let store = { xp:0, done:{}, streak:0, last:null, interleaving:true, darkMode:false, weakWords:{}, ttsVoice: 'kk_KZ-raya-x_low.onnx' };
 try { const raw = localStorage.getItem(LS_KEY); if (raw) store = Object.assign(store, JSON.parse(raw)); } catch(e){}
+if (!store.ttsVoice) store.ttsVoice = 'kk_KZ-raya-x_low.onnx';
 if (store.interleaving === undefined) store.interleaving = true;
 if (store.darkMode === undefined) store.darkMode = false;
 if (!store.weakWords) store.weakWords = {};
