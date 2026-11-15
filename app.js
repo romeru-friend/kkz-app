@@ -1063,7 +1063,12 @@ function renderLearn(){
   window.scrollTo(0,0);
 }
 function choiceHTML(ex){
-   if (ex.type === 'scramble') {
+     if (ex.type === 'scramble') {
+    // Инициализируем буквы ДО того, как нарисуем их на экране
+    if (session.scrambleLetters.length === 0 && session.scrambleSelected.length === 0) {
+      session.scrambleLetters = ex.letters.slice();
+    }
+
     return `
       <p class="q-prompt">${esc(ex.prompt)}</p>
       <div class="q-card small"><div class="q-ru">${esc(ex.display)}</div></div>
@@ -1102,10 +1107,7 @@ function choiceHTML(ex){
 }
 function bindChoice(ex){
   if (ex.type === 'scramble') {
-    // Если это первый рендер задания, заполняем пул буквами из самого задания
-    if (session.scrambleLetters.length === 0 && session.scrambleSelected.length === 0) {
-      session.scrambleLetters = ex.letters.slice();
-    }
+    // Убрали отсюда проверку на пустоту, так как она теперь в choiceHTML
     
     session.scrambleLetters.forEach((l, i) => {
       const btn = document.querySelector(`.letter-btn[data-idx="${i}"]`);
@@ -1127,6 +1129,7 @@ function bindChoice(ex){
     });
     return;
   }
+  
   // ... дальше идет старый код для listening и choice ...
   if (ex.type === 'listening') {
     const listenBtn = document.getElementById('listenBtn');
