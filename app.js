@@ -1023,19 +1023,30 @@ function renderLearn(){
   const pct = Math.round((i / cards.length) * 100);
   const alreadyDone = !!store.done[s.levelId + ':' + s.li];
   let body, prompt;
+  
   if (card.kind === 'theory'){
     prompt = 'Правило';
     body = `<div class="theory-card"><h3>${esc(card.title)}</h3><p>${esc(card.text)}</p>${(card.examples||[]).map(e => `<div class="theory-example"><div class="te-kz">${esc(e.kz)}</div><div class="te-ru">${esc(e.ru)}</div></div>`).join('')}</div>`;
-   } else {
+  } else {
     prompt = 'Новое слово';
     body = `<div class="learn-card">
       ${card.emoji?`<div class="lc-emoji">${card.emoji}</div>`:''}
       <div class="lc-kz">${esc(card.kz)}</div>
       <div class="lc-ru">${esc(card.ru)}</div>
-      ${card.example ? `<div class="lc-example"><div class="lc-ex-kz">${esc(card.example.kz)}</div><div class="lc-ex-ru">${esc(card.example.ru)}</div></div>` : ''}
+      
+      ${card.example ? `
+        <div class="lc-example">
+          <div class="lc-ex-kz">
+            ${esc(card.example.kz)} 
+            <button type="button" class="inline-speak" id="speakExBtn" style="margin-left:6px; background:#eaf7ff; color:#1cb0f6; border:none; border-radius:8px; padding:6px 10px; font-size:14px; cursor:pointer; vertical-align:middle;">🔊</button>
+          </div>
+          <div class="lc-ex-ru">${esc(card.example.ru)}</div>
+        </div>` : ''}
+        
       <button type="button" class="speak" id="speakBtn">🔊</button>
     </div>`;
   }
+  
   setApp(`<div class="lesson-screen">
     <div class="lesson-top">
       <button type="button" class="icon-btn" id="quitBtn">✕</button>
@@ -1050,17 +1061,29 @@ function renderLearn(){
       ${alreadyDone && i===0?'<div style="text-align:center;margin-top:10px"><button type="button" class="link" id="skipLearn">Сразу к упражнениям →</button></div>':''}
     </div>
   </div>`);
+  
   document.getElementById('quitBtn').onclick = handleQuit;
+  
+  // Озвучка самого слова (большая кнопка)
   const sp = document.getElementById('speakBtn');
   if (sp) sp.onclick = () => speak(card.kz);
+  
+  // Озвучка примера предложения (новая маленькая кнопка)
+  const spEx = document.getElementById('speakExBtn');
+  if (spEx && card.example) spEx.onclick = () => speak(card.example.kz);
+  
   const backBtn = document.getElementById('backBtn');
   if (backBtn) backBtn.onclick = () => { s.learnIdx--; renderLearn(); };
+  
   function goToQuiz(){ s.phase='quiz'; s.idx=0; s.selected=null; s.feedback=null; renderLesson(); }
+  
   document.getElementById('nextLearnBtn').onclick = () => {
     if (isLast) goToQuiz(); else { s.learnIdx++; renderLearn(); }
   };
+  
   const skip = document.getElementById('skipLearn');
   if (skip) skip.onclick = goToQuiz;
+  
   window.scrollTo(0,0);
 }
 function choiceHTML(ex){
