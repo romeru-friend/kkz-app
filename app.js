@@ -13,10 +13,11 @@ DATA.forEach(lv => lv.lessons.forEach((ls,i) => {
   FLAT.push(item);
 }));
 const LS_KEY = 'kkz_learn_v6';
-let store = { xp:0, done:{}, streak:0, last:null, interleaving:true, darkMode:false, weakWords:{}, ttsVoice: 'kk_KZ-raya-x_low.onnx' };
+let store = { xp:0, done:{}, streak:0, last:null, interleaving:true, darkMode:false, weakWords:{}, ttsVoice: 'kk_KZ-raya-x_low.onnx', ttsRate: 0.85 };
 try { const raw = localStorage.getItem(LS_KEY); if (raw) store = Object.assign(store, JSON.parse(raw)); } catch(e){}
 if (!store.ttsVoice) store.ttsVoice = 'kk_KZ-raya-x_low.onnx';
 if (store.interleaving === undefined) store.interleaving = true;
+if (!store.ttsRate) store.ttsRate = 0.85;
 if (store.darkMode === undefined) store.darkMode = false;
 if (!store.weakWords) store.weakWords = {};
 if (store.darkMode) document.body.classList.add('dark');
@@ -57,7 +58,7 @@ async function speak(text) {
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
-     audio.playbackRate = 0.85; // Замедляем на 15% (1.0 — это норма, 0.5 — в два раза медленнее)
+     audio.playbackRate = store.ttsRate || 0.85;
     
     audio.onended = () => URL.revokeObjectURL(url);
     audio.onerror = () => URL.revokeObjectURL(url);
@@ -544,6 +545,18 @@ function renderSettings(){
           <option value="kk_KZ-iseke-x_low.onnx" ${store.ttsVoice === 'kk_KZ-iseke-x_low.onnx' ? 'selected' : ''}>Iseke (Мужской, базовый)</option>
           <option value="kk_KZ-issai-high.onnx" ${store.ttsVoice === 'kk_KZ-issai-high.onnx' ? 'selected' : ''}>Raya (Женский, высокое качество)</option>
         </select>
+              <div class="settings-item" style="flex-direction: column; align-items: flex-start;">
+        <div class="si-text" style="margin-bottom: 10px;">
+          <div class="si-title">⏱️ Скорость речи</div>
+          <div class="si-desc">Замедлите диктора, если он говорит слишком быстро</div>
+        </div>
+        <input type="range" id="rateSlider" min="0.5" max="1.2" step="0.05" value="${store.ttsRate || 0.85}" style="width: 100%; cursor: pointer; accent-color: #58cc02;">
+        <div style="width: 100%; display: flex; justify-content: space-between; font-size: 12px; color: #8f8f8f; font-weight: 800; margin-top: 5px;">
+          <span>0.5x</span>
+          <span style="color: #58cc02; font-size: 14px;" id="rateValue">${store.ttsRate || 0.85}x</span>
+          <span>1.2x</span>
+        </div>
+      </div>
       </div>
             <div class="settings-item" style="justify-content: center; cursor: pointer;" id="logoutBtn">
         <div class="si-title" style="color: #ff4b4b;">🚪 Выйти из аккаунта</div>
@@ -559,6 +572,12 @@ function renderSettings(){
   document.getElementById('tDark').onclick = () => { store.darkMode = !store.darkMode; document.body.classList.toggle('dark', store.darkMode); save(); renderSettings(); };
      document.getElementById('voiceSelect').onchange = (e) => {
     store.ttsVoice = e.target.value;
+    save();
+  };
+     document.getElementById('rateSlider').oninput = (e) => {
+    store.ttsRate = parseFloat(e.target.value);
+    // Обновляем текст рядом с ползунком, чтобы было видно текущее значение
+    document.getElementById('rateValue').textContent = store.ttsRate.toFixed(2) + 'x';
     save();
   };
   window.scrollTo(0,0);
