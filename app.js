@@ -29,23 +29,24 @@ const app = document.getElementById('app');
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 
-async function speak(text, voice = 'kk-KZ-AigulNeural') {
+async function speak(text) {
   if (!text) return;
   
   try {
-    // ВСТАВЬТЕ СЮДА ВАШУ ССЫЛКУ НА CLOUDFLARE WORKER
-    const PROXY_URL = 'https://azure-tts-proxy.romerubeta.workers.dev'; 
+    // Ваша ссылка из Cloudflare Tunnel + /tts
+    const TTS_URL = 'https://fleece-reservoir-introduced-adapted.trycloudflare.com/tts'; 
     
-    const response = await fetch(PROXY_URL, {
+    const response = await fetch(TTS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text, voice: voice })
+      body: JSON.stringify({ 
+        text: text, 
+        voice: 'kk_KZ-raya-x_low.onnx', 
+        speaker: 0 
+      })
     });
 
-       if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(`Worker Error: ${errData.status || 'Unknown'} - ${errData.error_details || errData.error || 'No details'}`);
-    }
+    if (!response.ok) throw new Error('TTS request failed');
     
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
@@ -55,12 +56,12 @@ async function speak(text, voice = 'kk-KZ-AigulNeural') {
     audio.onerror = () => URL.revokeObjectURL(url);
     
     await audio.play();
+    
   } catch (error) {
-    console.warn('Azure TTS failed, fallback to system voice', error);
-    fallbackSpeak(text);
+    console.warn('Local TTS failed, fallback to system voice', error);
+    fallbackSpeak(text); // Если что-то упадет, сработает старый голос
   }
 }
-
 // Резервный вариант (если Edge TTS заблокирован)
 function fallbackSpeak(text) {
   try {
