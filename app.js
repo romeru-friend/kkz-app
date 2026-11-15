@@ -983,6 +983,7 @@ function renderLesson(){
   </div>`);
   document.getElementById('quitBtn').onclick = handleQuit;
   bindChoice(ex);
+  renderBottom();
   window.scrollTo(0,0);
 }
 function renderReading(){
