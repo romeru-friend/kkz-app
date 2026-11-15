@@ -36,37 +36,70 @@ async function speak(text) {
   
   try {
     const TTS_URL = 'https://fleece-reservoir-introduced-adapted.trycloudflare.com/tts'; 
-    
-    // Берем голос из настроек (или дефолтный)
     const selectedVoice = store.ttsVoice || 'kk_KZ-raya-x_low.onnx';
-    
-    // Если выбран issai-high, передаем speaker: 3 (как в вашем примере)
     const speakerId = selectedVoice === 'kk_KZ-issai-high.onnx' ? 3 : 0;
 
+    // 1. Если предыдущее слово еще звучит — резко обрываем его, чтобы не было каши
+    if (window.currentAudioSource) {
+      try { window.currentAudioSource.stop(); } catch(e){}
+    }
+    if (window.currentAudioContext) {
+      try { window.currentAudioContext.close(); } catch(e){}
+    }
+
+    // 2. Запрашиваем аудио
     const response = await fetch(TTS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        text: text, 
-        voice: selectedVoice, 
-        speaker: speakerId 
-      })
+      body: JSON.stringify({ text: text, voice: selectedVoice, speaker: speakerId })
     });
 
     if (!response.ok) throw new Error('TTS request failed');
     
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-     audio.playbackRate = store.ttsRate || 0.85;
+    const arrayBuffer = await response.arrayBuffer();
     
-    audio.onended = () => URL.revokeObjectURL(url);
-    audio.onerror = () => URL.revokeObjectURL(url);
+    // 3. Обрабатываем через Web Audio API
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+    window.currentAudioContext = audioCtx; // Запоминаем для остановки в будущем
     
-    await audio.play();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    
+    const rate = store.ttsRate || 0.85;
+    source.playbackRate.value = rate;
+    window.currentAudioSource = source; // Запоминаем источник
+    
+    const gainNode = audioCtx.createGain();
+    source.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    // Вычисляем время звучания с учетом скорости
+    const playTime = audioBuffer.duration / rate; 
+    const fadeTime = 0.08; // 80 миллисекунд для плавности
+    const now = audioCtx.currentTime;
+    
+    // 4. Магия плавности
+    // Плавно появляемся
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(1, now + fadeTime);
+    
+    // Плавно затухаем в конце
+    gainNode.gain.setValueAtTime(1, now + playTime - fadeTime);
+    gainNode.gain.linearRampToValueAtTime(0, now + playTime);
+    
+    source.start(now);
+    
+    // 5. Очищаем память после окончания
+    source.onended = () => {
+      audioCtx.close();
+      window.currentAudioContext = null;
+      window.currentAudioSource = null;
+    };
     
   } catch (error) {
-    console.warn('Local TTS failed, fallback to system voice', error);
+    console.warn('TTS failed, fallback to system voice', error);
     fallbackSpeak(text); 
   }
 }
