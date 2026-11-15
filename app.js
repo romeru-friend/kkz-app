@@ -629,12 +629,57 @@ function isGrammarLesson(ls){ return ls && ls.type === 'grammar'; }
 function buildLearnCards(lesson){
   if (isGrammarLesson(lesson)) return lesson.theory.map(t => ({kind:'theory', title:t.title, text:t.text, examples:t.examples||[]}));
   if (lesson.type === 'checkpoint' || lesson.type === 'text') return [];
-  return lesson.words.map(w => ({kind:'word', kz:w.kz, ru:w.ru, emoji:w.emoji}));
+  
+  // Примеры для первых двух уроков
+  const examples = {
+    'Сәлем': {kz: 'Сәлем, қалайсың?', ru: 'Привет, как дела?'},
+    'Сәлеметсіз бе': {kz: 'Сәлеметсіз бе, мырза!', ru: 'Здравствуйте, сэр!'},
+    'Қалайсың?': {kz: 'Сәлем, қалайсың?', ru: 'Привет, как дела?'},
+    'Жақсы': {kz: 'Мен жақсымын.', ru: 'Я в порядке.'},
+    'Рахмет': {kz: 'Үлкен рахмет!', ru: 'Большое спасибо!'},
+    'Сау бол': {kz: 'Сау бол, кездескенше!', ru: 'Пока, до встречи!'},
+    'Кешіріңіз': {kz: 'Кешіріңіз, мен кешіктім.', ru: 'Извините, я опоздал.'},
+    'Өтінемін': {kz: 'Су беріңізші, өтінемін.', ru: 'Дайте воды, пожалуйста.'},
+    'Рұқсат етіңіз': {kz: 'Рұқсат етіңіз, мен кірейін.', ru: 'Разрешите, я войду.'},
+    'Қош келдіңіз': {kz: 'Қош келдіңіз, қонақтар!', ru: 'Добро пожаловать, гости!'},
+    'Кездескенше': {kz: 'Сау бол, кездескенше!', ru: 'Пока, до встречи!'},
+    'Сау болыңыз': {kz: 'Сау болыңыз, кездескенше!', ru: 'До свидания, до встречи!'}
+  };
+
+  return lesson.words.map(w => ({kind:'word', kz:w.kz, ru:w.ru, emoji:w.emoji, example: examples[w.kz] || null}));
 }
 function buildExercises(lesson, lessonId, skipInterleaving){
   if (isGrammarLesson(lesson)) return shuffle(lesson.exercises);
   if (lesson.type === 'checkpoint') return shuffle(lesson.exercises);
   if (lesson.type === 'text') return lesson.questions;
+
+  // НОВАЯ СТРУКТУРА ДЛЯ ПЕРВЫХ ДВУХ УРОКОВ
+  if (lessonId === 'greetings:0' || lessonId === 'greetings:1') {
+    const words = lesson.words, customEx = [];
+    words.forEach(w => {
+      // 1. Узнавание (Choice)
+      const othersRu = shuffle(words.filter(x => x !== w)).slice(0,3).map(x => x.ru);
+      customEx.push({type:'choice', prompt:'Что означает это слово?', display:w.kz, speak:w.kz, answer:w.ru, options:shuffle([w.ru,...othersRu]), _wordKey: w.kz});
+      
+      // 2. Активное припоминание (Сборка из букв)
+      const targetWord = w.kz.replace(/\s+/g, '');
+      customEx.push({
+        type:'scramble', 
+        prompt:'Соберите слово по-казахски', 
+        display:w.ru, 
+        answer:targetWord, 
+        letters: shuffle(targetWord.split('')), // Сохраняем перемешанные буквы прямо в задании
+        _wordKey: w.kz
+      });
+      
+      // 3. Аудирование (Listening)
+      const othersKz = shuffle(words.filter(x => x !== w)).slice(0,3).map(x => x.kz);
+      customEx.push({type:'listening', prompt:'Что вы услышали?', speak:w.kz, answer:w.kz, options:shuffle([w.kz,...othersKz]), _wordKey: w.kz});
+    });
+    return shuffle(customEx).slice(0, 9); 
+  }
+
+  // СТАРАЯ СТРУКТУРА ДЛЯ ОСТАЛЬНЫХ
   const words = lesson.words, mcq = [];
   words.forEach(w => {
     const others = shuffle(words.filter(x => x !== w)).slice(0,3).map(x => x.ru);
@@ -825,14 +870,24 @@ function startLesson(levelId, li){
     hearts: 5, errors: [] };
   renderLesson();
 }
-function startReviewLesson(levelId, li){
+function startLesson(levelId, li){
   const lv = DATA.find(l => l.id === levelId);
+  if (!lv || !lv.lessons || !lv.lessons[li]) return;
   const lesson = lv.lessons[li];
-  const ex = buildExercises(lesson, levelId + ':' + li, true);
-  const picked = shuffle(ex).slice(0, 10);
-  session = { levelId, li, lesson, phase:'quiz', learnCards:[], learnIdx:0,
-    exercises:picked, idx:0, correct:0, wrong:0, selected:null, feedback:null,
-    hearts: 5, errors: [], isReview: true };
+  let phase = 'learn';
+  if (lesson.type === 'checkpoint') phase = 'quiz';
+  else if (lesson.type === 'text') phase = 'reading';
+  
+  session = { 
+    levelId, li, lesson, phase, 
+    learnCards: buildLearnCards(lesson), 
+    learnIdx: 0,
+    exercises: buildExercises(lesson, levelId + ':' + li, false), 
+    idx: 0, correct: 0, wrong: 0, selected: null, feedback: null,
+    hearts: 5, errors: [],
+    scrambleLetters: [], // Инициализируем пул букв
+    scrambleSelected: [] // Инициализируем выбранные буквы
+  };
   renderLesson();
 }
 function startWeakWordsReview(){
@@ -970,9 +1025,15 @@ function renderLearn(){
   if (card.kind === 'theory'){
     prompt = 'Правило';
     body = `<div class="theory-card"><h3>${esc(card.title)}</h3><p>${esc(card.text)}</p>${(card.examples||[]).map(e => `<div class="theory-example"><div class="te-kz">${esc(e.kz)}</div><div class="te-ru">${esc(e.ru)}</div></div>`).join('')}</div>`;
-  } else {
+   } else {
     prompt = 'Новое слово';
-    body = `<div class="learn-card">${card.emoji?`<div class="lc-emoji">${card.emoji}</div>`:''}<div class="lc-kz">${esc(card.kz)}</div><div class="lc-ru">${esc(card.ru)}</div><button type="button" class="speak" id="speakBtn">🔊</button></div>`;
+    body = `<div class="learn-card">
+      ${card.emoji?`<div class="lc-emoji">${card.emoji}</div>`:''}
+      <div class="lc-kz">${esc(card.kz)}</div>
+      <div class="lc-ru">${esc(card.ru)}</div>
+      ${card.example ? `<div class="lc-example"><div class="lc-ex-kz">${esc(card.example.kz)}</div><div class="lc-ex-ru">${esc(card.example.ru)}</div></div>` : ''}
+      <button type="button" class="speak" id="speakBtn">🔊</button>
+    </div>`;
   }
   setApp(`<div class="lesson-screen">
     <div class="lesson-top">
@@ -1002,6 +1063,33 @@ function renderLearn(){
   window.scrollTo(0,0);
 }
 function choiceHTML(ex){
+   if (ex.type === 'scramble') {
+    return `
+      <p class="q-prompt">${esc(ex.prompt)}</p>
+      <div class="q-card small"><div class="q-ru">${esc(ex.display)}</div></div>
+      <div class="scramble-container">
+        <div class="scramble-slots" id="scrambleSlots">
+          ${session.scrambleSelected.map((l, i) => `<button type="button" class="letter-slot" data-idx="${i}">${l}</button>`).join('')}
+          ${Array(Math.max(0, ex.answer.length - session.scrambleSelected.length)).fill('<div class="letter-slot empty"></div>').join('')}
+        </div>
+        <div class="scramble-pool" id="scramblePool">
+          ${session.scrambleLetters.map((l, i) => `<button type="button" class="letter-btn" data-idx="${i}">${l}</button>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+  if (ex.type === 'listening') {
+    return `
+      <p class="q-prompt">${esc(ex.prompt)}</p>
+      <div class="q-card small" style="display:flex; justify-content:center; padding: 40px 20px;">
+        <button type="button" class="big-speak" id="listenBtn">🔊</button>
+      </div>
+      <div class="options" id="options">
+        ${ex.options.map(o => `<button type="button" class="opt" data-val="${esc(o)}">${esc(o)}</button>`).join('')}
+      </div>
+    `;
+  }
+  
   return `${ex.isReview ? '<div class="q-badge">🔁 Повторение</div>' : ''}
     <p class="q-prompt">${esc(ex.prompt)}</p>
     <div class="q-card ${ex.display?'':'small'}">
@@ -1013,6 +1101,39 @@ function choiceHTML(ex){
     </div>`;
 }
 function bindChoice(ex){
+  if (ex.type === 'scramble') {
+    // Если это первый рендер задания, заполняем пул буквами из самого задания
+    if (session.scrambleLetters.length === 0 && session.scrambleSelected.length === 0) {
+      session.scrambleLetters = ex.letters.slice();
+    }
+    
+    session.scrambleLetters.forEach((l, i) => {
+      const btn = document.querySelector(`.letter-btn[data-idx="${i}"]`);
+      if (btn) btn.onclick = () => {
+        if (session.feedback) return;
+        session.scrambleSelected.push(l);
+        session.scrambleLetters.splice(i, 1);
+        renderLesson();
+      };
+    });
+    session.scrambleSelected.forEach((l, i) => {
+      const btn = document.querySelector(`.letter-slot[data-idx="${i}"]`);
+      if (btn) btn.onclick = () => {
+        if (session.feedback) return;
+        session.scrambleLetters.push(l);
+        session.scrambleSelected.splice(i, 1);
+        renderLesson();
+      };
+    });
+    return;
+  }
+  // ... дальше идет старый код для listening и choice ...
+  if (ex.type === 'listening') {
+    const listenBtn = document.getElementById('listenBtn');
+    if (listenBtn) listenBtn.onclick = () => speak(ex.speak);
+    setTimeout(() => speak(ex.speak), 400); // Автовоспроизведение
+  }
+
   const opts = Array.from(app.querySelectorAll('.opt'));
   opts.forEach(b => {
     b.onclick = () => {
@@ -1050,7 +1171,15 @@ function renderBottom(){
 }
 function doCheck(){
   const s = session, ex = s.exercises[s.idx];
-  const ok = s.selected === ex.answer;
+  let ok = false;
+  
+  if (ex.type === 'scramble') {
+    const userAnswer = s.scrambleSelected.join('');
+    ok = userAnswer.toLowerCase() === ex.answer.toLowerCase();
+  } else {
+    ok = s.selected === ex.answer;
+  }
+
   if (ex._wordKey) {
     const cur = store.weakWords[ex._wordKey] || 0;
     if (ok) {
@@ -1066,11 +1195,15 @@ function doCheck(){
     s.hearts = Math.max(0, s.hearts - 1);
     s.errors.push(ex);
   }
-  app.querySelectorAll('.opt').forEach(b => {
-    if (b.dataset.val === ex.answer) b.classList.add('right');
-    if (b.dataset.val === s.selected && !ok) b.classList.add('wrong');
-    b.classList.add('locked');
-  });
+
+  if (ex.type !== 'scramble') {
+    app.querySelectorAll('.opt').forEach(b => {
+      if (b.dataset.val === ex.answer) b.classList.add('right');
+      if (b.dataset.val === s.selected && !ok) b.classList.add('wrong');
+      b.classList.add('locked');
+    });
+  }
+
   if (ok) s.correct++; else s.wrong++;
   s.feedback = { ok, answer: ex.answer, exercise: ex };
   renderBottom();
@@ -1084,6 +1217,8 @@ function nextQ(){
   s.idx++;
   s.selected = null;
   s.feedback = null;
+  s.scrambleLetters = [];
+  s.scrambleSelected = [];
   renderLesson();
 }
 function finishLesson(){
