@@ -34,16 +34,21 @@ async function speak(text) {
   if (!text) return;
   
   try {
-    // Ваша ссылка из Cloudflare Tunnel + /tts
     const TTS_URL = 'https://fleece-reservoir-introduced-adapted.trycloudflare.com/tts'; 
     
+    // Берем голос из настроек (или дефолтный)
+    const selectedVoice = store.ttsVoice || 'kk_KZ-raya-x_low.onnx';
+    
+    // Если выбран issai-high, передаем speaker: 3 (как в вашем примере)
+    const speakerId = selectedVoice === 'kk_KZ-issai-high.onnx' ? 3 : 0;
+
     const response = await fetch(TTS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         text: text, 
-        voice: 'kk_KZ-raya-x_low.onnx', 
-        speaker: 0 
+        voice: selectedVoice, 
+        speaker: speakerId 
       })
     });
 
@@ -60,7 +65,7 @@ async function speak(text) {
     
   } catch (error) {
     console.warn('Local TTS failed, fallback to system voice', error);
-    fallbackSpeak(text); // Если что-то упадет, сработает старый голос
+    fallbackSpeak(text); 
   }
 }
 // Резервный вариант (если Edge TTS заблокирован)
