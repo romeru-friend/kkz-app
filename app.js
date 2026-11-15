@@ -528,6 +528,17 @@ function renderSettings(){
         <div class="si-text"><div class="si-title">🌙 Тёмный режим</div><div class="si-desc">Тёмное оформление интерфейса</div></div>
         <button type="button" class="toggle ${store.darkMode?'on':''}" id="tDark"><span class="toggle-knob"></span></button>
       </div>
+         <div class="settings-item" style="flex-direction: column; align-items: flex-start;">
+        <div class="si-text" style="margin-bottom: 10px;">
+          <div class="si-title">🗣️ Голос диктора</div>
+          <div class="si-desc">Выберите, как будут звучать слова</div>
+        </div>
+        <select id="voiceSelect" class="search-input" style="margin-bottom: 0; cursor: pointer; appearance: auto; padding: 10px;">
+          <option value="kk_KZ-raya-x_low.onnx" ${store.ttsVoice === 'kk_KZ-raya-x_low.onnx' ? 'selected' : ''}>Raya (Женский, базовый)</option>
+          <option value="kk_KZ-iseke-x_low.onnx" ${store.ttsVoice === 'kk_KZ-iseke-x_low.onnx' ? 'selected' : ''}>Iseke (Мужской, базовый)</option>
+          <option value="kk_KZ-issai-high.onnx" ${store.ttsVoice === 'kk_KZ-issai-high.onnx' ? 'selected' : ''}>Raya (Женский, высокое качество)</option>
+        </select>
+      </div>
             <div class="settings-item" style="justify-content: center; cursor: pointer;" id="logoutBtn">
         <div class="si-title" style="color: #ff4b4b;">🚪 Выйти из аккаунта</div>
       </div>
@@ -540,6 +551,10 @@ function renderSettings(){
     }
   };
   document.getElementById('tDark').onclick = () => { store.darkMode = !store.darkMode; document.body.classList.toggle('dark', store.darkMode); save(); renderSettings(); };
+     document.getElementById('voiceSelect').onchange = (e) => {
+    store.ttsVoice = e.target.value;
+    save();
+  };
   window.scrollTo(0,0);
 }
 
