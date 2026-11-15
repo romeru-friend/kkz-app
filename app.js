@@ -57,6 +57,7 @@ async function speak(text) {
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
+     audio.playbackRate = 0.85; // Замедляем на 15% (1.0 — это норма, 0.5 — в два раза медленнее)
     
     audio.onended = () => URL.revokeObjectURL(url);
     audio.onerror = () => URL.revokeObjectURL(url);
