@@ -35,7 +35,7 @@ async function speak(text) {
   if (!text) return;
   
   try {
-    const TTS_URL = 'https://fleece-reservoir-introduced-adapted.trycloudflare.com/tts'; 
+    const TTS_URL = 'https://component-publisher-scanners-cycling.trycloudflare.com/tts'; 
     const selectedVoice = store.ttsVoice || 'kk_KZ-raya-x_low.onnx';
     const speakerId = selectedVoice === 'kk_KZ-issai-high.onnx' ? 3 : 0;
 
